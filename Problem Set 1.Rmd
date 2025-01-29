@@ -1,0 +1,88 @@
+---
+title: "Problem Set 1"
+author: "Costa Stasinopoulos"
+date: "2025-01-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# This "setup" chunk specifies global options
+# for handling code, plots, etc in your doc.
+  knitr::opts_chunk$set(
+    eval = TRUE,
+    echo = TRUE, 
+    warning = FALSE, 
+    message = FALSE,
+    fig.align = 'center'
+  )  
+
+library(haven); library(dplyr); library(knitr)
+
+# Read the SPSS file
+data <- read_sav("SAF_R9.data_.final_.wtd_release.30May23.sav")
+
+```
+
+## R Markdown
+1. This data set is for South Africa. There are 1580 observations for that same number of respondents. The interviews took place from 26 November 2022 to 17 December 2022. The data set contains 390 variables overall. 
+1. The table below contains basic demographic information on the respondents in the survey.Q1 refers to respondent age. From this variable, we can see that the average age of respondents is 39.93 years old, the median age is 38, and the minimum and maximum are 18 and 89, respectively. Q100 identifies the gender of the respondent, with 1 signifying man and 2 signifying woman. The minimum and maximum values of this variable are not very helpful, but the mean of 1.497 indicates that just over 50% of the respondents are men (because there are more men the mean is weighted slightly more toward 1 than 2).Q2 stands for the "language spoken at home" variable, while Q84A is ethnic community, cultural group or tribe. These are both important demographic variables, but they are categorical variables with different numbers assigned to different languages and ethnic groups, meaning that the summary statistics provided in the table to not provide useful information.
+
+```{r Q2 Code}
+#Q2 is what is the primary language you speak at home
+#Q84A is Ethnic community, cultural group or tribe 
+#Gender of respondent is Q100, 1=Man, 2=Woman 
+data %>%
+  select(RESPNO, Q1, Q2, Q84A, Q100) %>%
+  summary() %>%
+  kable(caption = "Summary of Selected Variables")
+```
+
+1.The "real" values for the variable Q78A are 1-5, with one reflecting an extremely negative view of Chinese influence,  5 reflecting an extremely positive view, and 2-3 being more moderate views on the spectrum. We see that responses have a local peak for 1, decline for 2-3, and are highest (and similar in frequency) for 4-5, indicating a high frequency of support for Chinese influence. Answers of 8 or 9 indicated refusals to answer or an answer of "I don't know", respectively.
+
+```{r Q3 Code}
+#question 3
+#prop.table takes a table and turns it into frequencies (percentage of total for each response type)
+china_support <- prop.table(table(data$Q78A))
+
+# Convert the table to a data frame and rename columns, this is necessary because it seems like there is no way to rename within kable
+china_support_df <- as.data.frame(china_support) %>%
+  setNames(c("Outlook on Chinese Influence (Q78A)", "Relative Frequency"))
+
+#output table (which is actually a data frame now)
+kable(china_support_df)
+
+```
+
+1.The variable Q78B is the same as the variable in the previous question but in regard to US influence. The relative frequency table shows that relatively fewer respondents held strongly or moderately negative views of US influence and more had neutral to somewhat positive views of this influence. However, a substantially lower proportion of respondents were strongly postive about US influence vs Chinese influence (.127 vs .184). A significantly larger proportino of respondents answered "I don't know" in regard to US influence than in regard to Chinese influence (.421 vs .349.)
+
+```{r Q4 Code}
+#question 4
+#prop.table takes a table and turns it into frequencies (percentage of total for each response type)
+usa_support <- prop.table(table(data$Q78B))
+
+# Convert the table to a data frame and rename columns, this is necessary because it seems like there is no way to rename within kable
+usa_support_df <- as.data.frame(usa_support) %>%
+  setNames(c("Outlook on Chinese Influence (Q78A)", "Relative Frequency"))
+
+#output table (which is actually a data frame now)
+kable(usa_support_df)
+
+```
+
+
+1. We can see in the t-test results that the mean of the first variable (Q78A) is about .45 lower than that of the second variable, Q74B. Additionally, the p-value is extremely low - effectively zero - meaning that this two-tailed t-test is highly significant and it is very likely that the means of the two variables are different (and that the Chinese influence variable mean is lower). -.573 to -.337 provides the 95 percent confidence interval range for the actual difference in average mean value between Q74A and Q74B. This t-test shows that, with the non-value answers removed, it is very likely that on average responses regarding Chinese influence are more negative than those regarding US influence (most likely by around .455 points on a 5-point scale).
+
+
+
+```{r Q5 Code}
+#question 5
+data %>%
+  mutate(
+    across(Q78A:Q78B, # vars to work on
+           ~ if_else(.x %in% 1:5, .x, NA) # function applied to vars
+    )
+  )
+
+t.test(data$Q78A, data$Q78B, paired = TRUE)
+```
+
